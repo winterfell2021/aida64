@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://gw.alipayobjects.com/os/lib/antv/g2/3.5.17/dist/g2.min.js"></script>
+    <script src="/static/js/progressbar.js?v=2020"></script>
+    <script src="/static/js/vue-clock.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg,
+            #3B3B3B 25%, #6E6E6E 0, #6E6E6E 50%,
+            #3B3B3B 0, #3B3B3B 75%, #6E6E6E 0);
+            background-size: 30px 30px;
+        }
+
+        .card {
+            border: 2px white;
+            border-radius: 5px;
+            background-color: white;
+            padding: 3px;
+        }
+
+        .card-body {
+            color: white;
+            background-color: #383838;
+        }
+
+        .card-header {
+            color: #383838;
+            text-align: center;
+        }
+
+        .card-header h3 {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        .card-header h3 img {
+            width: 2rem;
+            vertical-align: middle;
+        }
+
+        ul {
+            list-style-type: none;
+            padding-inline-start: 10px;
+
+        }
+
+        li {
+            padding: 5px;
+        }
+
+        .centered {
+            position: absolute;
+            top: 56px;
+            left: 65px;
+            color: #383838;
+            font-weight: 600;
+        }
+
+        .underline li span {
+            border-bottom: solid;
+        }
+    </style>
+</head>
+<body>
+{% autoescape false %}
+<div id="app">
+    <el-row v-if="obj">
+        <el-col :span="10" style="padding: 5px">
+            <div class="card">
+                <div class="card-body">
+                    <el-row>
+                        <el-col :span="7">
+                            <div style="padding: 15px;">
+                                <img width="100" src="/static/img/processor.svg">
+                                <div class="centered" style="top: 55px;left: 50px;">{{obj.sensors.cpu.main}}C</div>
+                            </div>
+                        </el-col>
+                        <el-col :span="9">
+                            <ul class="underline" style="    padding-inline-start: 0px;">
+                                <li>
+                                    <img width="16" src="/static/img/cpu.svg">
+                                    <span>
+                                        使用
+                                        {{obj.cpu.usage}}%
+                                    </span>
+                                </li>
+                                <li>
+                                    <img width="16" src="/static/img/thunder.svg">
+                                    <span>
+                                        主频 {{obj.cpu.max_freq}} GHz
+                                    </span>
+                                </li>
+                                <li>
+                                    <img width="16" src="/static/img/fan.svg">
+                                    <span>转速 {{obj.sensors.fan.fan1}} RPM</span>
+                                </li>
+                            </ul>
+                        </el-col>
+                        <el-col :span="8">
+                            <div id="cpu">
+                            </div>
+                        </el-col>
+                        <el-col :span="24" style="margin-bottom: 10px">
+                            <div style="margin-left: 20px;margin-right: 20px;border-radius: 10px;border: 2px solid;text-align: center">
+                                <span><img width="16" src="/static/img/内存.svg">
+                                    电压</span>
+                                <span style="margin-right: 10px;">{{ (obj.cpu.voltage.reduce((a, b) => Number(a) + Number(b), 0)/8).toFixed(2)}}V</span>
+                                <span><img width="16" src="/static/img/功率.svg">
+                                    功耗
+                                    </span>
+                                <span>{{obj.power[0].used.toFixed(2)}}W</span>
+
+                            </div>
+                        </el-col>
+                    </el-row>
+                </div>
+                <div class="card-header">
+                    <h3>
+                        {{obj.cpu.name}} <img src="/static/img/intel.svg">
+                    </h3>
+                </div>
+            </div>
+        </el-col>
+        <el-col :span="14" style="padding: 5px">
+            <div class="card">
+                <div class="card-body">
+                    <el-row>
+                        <el-col :span="6">
+                            <div style="vertical-align: middle;padding: 15px 15px 0;">
+                                <img width="140" src="/static/img/graphics-card.png">
+                                <div class="centered">{{obj.gpu.temp}}</div>
+                            </div>
+                        </el-col>
+                        <el-col :span="7">
+                            <ul class="underline">
+                                <li>
+                                    <img width="16" src="/static/img/cpu.svg">
+                                    <span>
+                                        使用 {{obj.gpu.fan}}
+                                    </span>
+                                </li>
+                                <li>
+                                    <img width="16" src="/static/img/thunder.svg">
+                                    <span>
+                                        主频 {{obj.gpu.freq}}
+                                    </span>
+                                </li>
+                                <li>
+                                    <img width="16" src="/static/img/fan.svg">
+                                    <span>转速 {{obj.sensors.fan.fan2}} RPM</span>
+                                </li>
+                            </ul>
+                        </el-col>
+                        <el-col :span="9">
+                            <div id="gpu">
+                            </div>
+                        </el-col>
+                        <el-col :span="24" style="margin-bottom: 10px">
+                            <div style="margin-left: 20px;margin-right: 20px;border-radius: 10px;border: 2px solid;text-align: center">
+                                <span><img width="16" src="/static/img/内存.svg">
+                                    显存</span>
+                                <progress-bar
+                                        style="vertical-align: middle;"
+                                        :options="options"
+                                        :value="Number(obj.gpu.memory.usage)/Number(obj.gpu.memory.total)*100"
+                                ></progress-bar>
+                                <span style="margin-left: 50px;margin-right: 10px;">{{ obj.gpu.memory.usage / 1000}} GB</span>
+                                <span><img width="16" src="/static/img/功率.svg">
+                                    功耗
+                                    </span>
+                                <progress-bar
+                                        style="vertical-align: middle;"
+                                        :options="options"
+                                        :value="obj.gpu.power.usage/obj.gpu.power.total*100"
+                                ></progress-bar>
+                                <span style="margin-left: 50px">{{ obj.gpu.power.usage}}W</span>
+
+                            </div>
+                        </el-col>
+                    </el-row>
+                </div>
+                <div class="card-header">
+                    <h3>
+                        {{obj.gpu.name}} <img src="/static/img/nvidia.svg">
+                    </h3>
+                </div>
+            </div>
+        </el-col>
+        <el-col :span="24" style="padding: 5px;">
+            <div class="card">
+                <div class="card-body">
+                    <el-row>
+                        <el-col :span="8">
+                            <el-row style="padding: 15px 15px 15px 30px;">
+                                <el-col :span="8">
+                                    <div>
+                                        <img width="100" src="/static/img/ssd-card.svg">
+                                    </div>
+                                </el-col>
+                                <el-col :span="16" style="margin-top: 20px;">
+                                    <div>挂载点：{{obj.disk.ssd.name}}</div>
+                                    <div style="border-bottom: solid">{{obj.disk.ssd.device}}
+                                        <span style="float: right">{{obj.disk.ssd.total}}GB</span>
+                                    </div>
+                                    <div>
+                                        <progress-bar
+                                                style="vertical-align: middle;"
+                                                :options="{
+                                                    layout: {
+                                                        height: 16,
+                                                        width: ssdWidth
+                                                    }
+                                                }"
+                                                :value="obj.disk.ssd.percent"
+                                        ></progress-bar>
+                                    </div>
+                                </el-col>
+                            </el-row>
+                        </el-col>
+                        <el-col :span="8">
+                            <el-row style="padding: 15px 15px 15px 30px;">
+                                <el-col :span="8">
+                                    <div>
+                                        <img width="100" src="/static/img/hard-drive.svg">
+                                    </div>
+                                </el-col>
+                                <el-col :span="16" style="margin-top: 20px;">
+                                    <div>挂载点：{{obj.disk.hhd.name}}</div>
+                                    <div style="border-bottom: solid">{{obj.disk.hhd.device}}
+                                        <span style="float: right">{{obj.disk.hhd.total}}GB</span>
+                                    </div>
+                                    <div>
+                                        <progress-bar
+                                                style="vertical-align: middle;"
+                                                :options="{
+                                                    layout: {
+                                                        height: 16,
+                                                        width: ssdWidth
+                                                    }
+                                                }"
+                                                :value="obj.disk.hhd.percent"
+                                        ></progress-bar>
+                                    </div>
+                                </el-col>
+                            </el-row>
+                        </el-col>
+                        <el-col :span="8">
+                            <el-row style="padding: 15px;">
+                                <el-col :span="9">
+                                    <div>
+                                        <img width="100" src="/static/img/ram.svg">
+                                        <div class="centered" style="color: white; top:51px;    left: 50px;">
+                                            {{parseInt(obj.memory.total/1000)}}
+                                        </div>
+                                    </div>
+                                </el-col>
+                                <el-col :span="15" style="margin-top: 20px;">
+                                    <div>RAM已用：{{obj.memory.used}} MB</div>
+                                    <div>RAM缓存：{{obj.memory.buff}} MB</div>
+                                    <div>
+                                        <progress-bar
+                                                style="vertical-align: middle;"
+                                                :options="{
+                                                    layout: {
+                                                        height: 16,
+                                                        width: ssdWidth
+                                                    }
+                                                }"
+                                                :value="(1-obj.memory.free/obj.memory.total)*100"
+                                        ></progress-bar>
+                                    </div>
+                                </el-col>
+                            </el-row>
+                        </el-col>
+                    </el-row>
+                </div>
+            </div>
+        </el-col>
+        <el-col :span="24" style="padding: 5px;">
+            <div class="card" style="border-radius: 20px;">
+                <div class="card-body" style="border-radius: 20px;">
+                    <el-row>
+                        <el-col :span="6">
+                            <el-row style="padding: 15px;">
+                                <el-col :span="8">
+                                    <div>
+                                        <img :width="vWidth/2-10" src="/static/img/headphones.svg" style="padding-top: 10px;">
+                                    </div>
+                                </el-col>
+                                <el-col :span="16" style="margin-top: 20px;">
+                                    <div style="font-size: 1.25rem">音量 {{obj.sound[0]}}</div>
+                                    <div>
+                                        <progress-bar
+                                                style="vertical-align: middle;"
+                                                :options="{
+                                                    layout: {
+                                                        height: 16,
+                                                        width: vWidth
+                                                    }
+                                                }"
+                                                :value="obj.sound[0].replace('%','')"
+                                        ></progress-bar>
+                                    </div>
+                                </el-col>
+                            </el-row>
+                        </el-col>
+                        <el-col :span="6">
+                            <el-row style="padding: 15px;">
+                                <el-col :span="7">
+                                    <div>
+                                        <img :width="vWidth/2-10" src="/static/img/cooling-fan.svg" style="padding-top: 10px;">
+                                    </div>
+                                </el-col>
+                                <el-col :span="17" style="margin-top: 20px;">
+                                    <div style="font-size: 1.25rem">风扇 {{obj.sensors.fan.fan3}} RPM</div>
+                                    <div>
+                                        <progress-bar
+                                                style="vertical-align: middle;"
+                                                :options="{
+                                                    layout: {
+                                                        height: 16,
+                                                        width: vWidth
+                                                    }
+                                                }"
+                                                :value="obj.sensors.fan.fan2/4000*100"
+                                        ></progress-bar>
+                                    </div>
+                                </el-col>
+                            </el-row>
+                        </el-col>
+                        <el-col :span="6">
+                            <el-row style="padding: 15px 15px 15px 30px;">
+                                <el-col :span="8">
+                                    <div>
+                                        <img :width="vWidth/2-5" src="/static/img/wifi.svg" style="padding-top: 10px;">
+                                    </div>
+                                </el-col>
+                                <el-col :span="16" style="margin-top: 20px;">
+                                    <div style="font-size: 1.25rem"><img src="/static/img/server.svg" width="16"/>
+                                        {{obj.network.wifi.upload}}
+                                    </div>
+                                    <div style="font-size: 1.25rem"><img src="/static/img/download.svg" width="16"/>
+                                        {{obj.network.wifi.download}}
+                                    </div>
+                                </el-col>
+                            </el-row>
+                        </el-col>
+                        <!--<el-col :span="6">
+                            <el-row style="padding: 15px 15px 15px 30px;">
+                                <el-col :span="8">
+                                    <div>
+                                        <clock :size="`${vWidth/2-5}px`"></clock>
+                                    </div>
+                                </el-col>
+                                <el-col :span="16" style="margin-top: 20px;">
+                                    <div style="font-size: 1.25rem">
+                                        {{ obj.time[1]}}
+                                    </div>
+                                    <div style="font-size: 1.25rem">
+                                        {{obj.time[0]}}
+                                    </div>
+                                </el-col>
+                            </el-row>
+                        </el-col>-->
+                        <el-col :span="2">
+                            <el-row style="padding: 15px 15px 15px 30px;">
+                                <div>
+                                    <clock :size="`${vWidth/2-5}px`"></clock>
+                                </div>
+                            </el-row>
+                        </el-col>
+                        <el-col :span="4">
+                            <img src="/static/img/icon1.png" style="float: right;padding-right: 10px;padding-top: 5px;"
+                                 :width="vWidth"/>
+                        </el-col>
+                    </el-row>
+                </div>
+            </div>
+        </el-col>
+        <el-col :span="24" style="padding: 5px;">
+            <div class="card" style="border-radius: 20px;font-size: 22px;padding: 5px;text-align: center">
+                彩云天气：{{obj.weather.forecast_keypoint}}
+                <span style="float: right">小🐲课题组</span>
+            </div>
+        </el-col>
+    </el-row>
+</div>
+{% endautoescape %}
+<script>
+    let vm = new Vue({
+        el: '#app',
+        data() {
+            return {
+                obj: null,
+                cpuChart: null,
+                gpuChart: null,
+                options: {
+                    layout: {
+                        height: 16,
+                        width: 50
+                    }
+                },
+                clientWidth: 0,
+            }
+        },
+        mounted() {
+            this.getData()
+            this.clientWidth = document.body.clientWidth;
+            window.onresize = () => {
+                return (() => {
+                    this.clientWidth = document.body.clientWidth;
+                })()
+            }
+        },
+        computed: {
+            width() {
+                return this.clientWidth
+            },
+            ssdWidth() {
+                return (this.clientWidth - 16) / 9 * 2 - 30
+            },
+            vWidth() {
+                return (this.clientWidth - 16) / 6 - 30
+            }
+        },
+        methods: {
+            getData() {
+                axios.get('/api')
+                    .then((res) => {
+                        this.obj = res.data
+                        setTimeout(() => {
+                            this.drawCPUChart();
+                            this.drawGPUChart();
+                        }, 200)
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                    });
+                setTimeout(() => {
+                    this.getData()
+                }, 1000)
+            },
+            drawCPUChart() {
+                const data = this.obj.cpu.full_freq.map((vo, index) => {
+                    return {
+                        name: 'C' + (index + 1),
+                        value: Number(vo) / 1000
+                    }
+                })
+                if (this.cpuChart) {
+                    this.cpuChart.changeData(data)
+                } else {
+                    const chart = new G2.Chart({
+                        container: 'cpu',
+                        forceFit: true,
+                        height: 130,
+                        padding: 'auto',
+                    });
+                    chart.source(data, {
+                        value: {
+                            min: 0,
+                            max: Number(this.obj.cpu.max_freq)
+                        }
+                    });
+                    chart.coord('polar', {
+                        radius: 0.8
+                    });
+                    chart.tooltip(false);
+                    chart.axis('name', {
+                        line: null,
+                        tickLine: null,
+                        grid: {
+                            lineStyle: {
+                                lineDash: null
+                            },
+                            hideFirstLine: false
+                        },
+                        label: {
+                            offset: 3,
+                            textStyle: {
+                                fill: 'white', // 文本的颜色
+                                fontSize: '12', // 文本大小
+                                fontWeight: 'bold', // 文本粗细
+                            }
+                        }
+                    });
+                    chart.axis('value', {
+                        line: null,
+                        tickLine: null,
+                        grid: {
+                            type: 'polygon',
+                            lineStyle: {
+                                lineDash: null
+                            },
+                            alternateColor: 'rgba(0, 0, 0, 0.04)'
+                        },
+                        label: null
+                    });
+                    chart.line().position('name*value').color('white')
+                        .size(2);
+                    chart.point().position('name*value').color('white')
+                        .shape('circle')
+                        .size(2)
+
+                    chart.render();
+                    this.cpuChart = chart;
+                }
+            },
+            drawGPUChart() {
+                const data = this.obj.gpu.process.map((vo, index) => {
+                    return {
+                        type: vo['name'].substr(0, 5),
+                        value: vo['memory']
+                    }
+                }).sort((a, b) => (a.value < b.value) ? 1 : -1)
+                if (this.gpuChart) {
+                    this.gpuChart.changeData(data)
+                } else {
+                    const chart = new G2.Chart({
+                        container: 'gpu',
+                        autoFit: true,
+                        width: 260,
+                        height: 130,
+                        padding: 'auto',
+                    });
+                    chart.source(data);
+                    chart.tooltip(false);
+                    chart.axis('type', {
+                        label: {
+                            offset: 5,
+                            textStyle: {
+                                fill: 'white', // 文本的颜色
+                                fontSize: '12', // 文本大小
+                                fontWeight: 'bold', // 文本粗细
+                            }
+                        }
+                    });
+                    chart.axis('value', false);
+                    chart.interval().position('type*value').color('white').opacity(1).label('value', {
+                        offset: 4,
+                        textStyle: {
+                            fill: 'white'
+                        },
+                        formatter: function (v) {
+                            if (v < 1000)
+                                return v + 'MB'
+                            else
+                                return v / 1000 + 'GB'
+                        }
+                    });
+                    chart.render();
+                    this.gpuChart = chart;
+                }
+            }
+        }
+    })
+</script>
+</body>
+</html>
