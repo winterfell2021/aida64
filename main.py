@@ -104,7 +104,7 @@ def get_addr_weather():
         ('alert', 'true'),
     )
 
-    response = requests.get(f'https://api.caiyunapp.com/v2.5/UR8ASaplvIwavDfR/118.7138206,32.2016835/weather',
+    response = requests.get(f'https://api.caiyunapp.com/v2.5/UR8ASaplvIwavDfR/<>/weather',
                             headers=headers,
                             params=params).json()
     return response['result']
